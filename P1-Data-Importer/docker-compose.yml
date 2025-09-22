@@ -1,0 +1,64 @@
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: appdb
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  ollama:
+    image: ollama/ollama:0.3.14
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+  rag:
+    build:
+      context: ./rag
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: appdb
+      DB_USER: appuser
+      DB_PASSWORD: apppassword
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_LLM_MODEL: mistral
+    ports:
+      - "8001:8001"
+    depends_on:
+      - db
+      - ollama
+    volumes:
+      - rag_data:/chroma
+
+  app:
+    build:
+      context: ./streamlit
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: appdb
+      DB_USER: appuser
+      DB_PASSWORD: apppassword
+      RAG_BASE_URL: http://rag:8001
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./streamlit:/app
+    depends_on:
+      - db
+      - rag
+
+volumes:
+  db_data:
+  ollama_data:
+  rag_data:
