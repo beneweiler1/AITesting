@@ -97,7 +97,8 @@ if "auto_sync" not in st.session_state:
 
 st.sidebar.checkbox("Auto-sync to RAG on upload/import", value=st.session_state.auto_sync, key="auto_sync")
 
-tabs = st.tabs(["Upload Data", "Browse Tables", "Upload Files", "Files", "Clear All", "Chat"])
+tabs = st.tabs(["Upload Data", "Browse Tables", "Upload Files", "Files", "Clear All", "Vector Search", "Chat"])
+
 
 with tabs[0]:
     uploaded = st.file_uploader("Upload CSV/XLS/XLSX", type=["csv", "xls", "xlsx"])
@@ -224,6 +225,84 @@ with tabs[4]:
             st.error(str(e))
 
 with tabs[5]:
+    st.subheader("Vector Search")
+
+    c1, c2, c3, c4 = st.columns([1, 1, 1, 1])
+
+    with c1:
+        if st.button("Index Files"):
+            try:
+                r = requests.post(f"{rag_base}/vdb/ingest_files", timeout=600)
+                st.success(r.json())
+            except Exception as e:
+                st.error(str(e))
+
+    with c2:
+        if st.button("Reset Index"):
+            try:
+                r = requests.post(f"{rag_base}/vdb/reset", timeout=60)
+                st.success(r.json())
+            except Exception as e:
+                st.error(str(e))
+
+    with c3:
+        if st.button("Setup Embed Model"):
+            try:
+                r = requests.post(f"{rag_base}/vdb/models/setup", timeout=600)
+                st.success(r.json())
+            except Exception as e:
+                st.error(str(e))
+
+    with c4:
+        if st.button("List Files"):
+            try:
+                r = requests.get(f"{rag_base}/files", timeout=30)
+                files = r.json().get("files", [])
+                if not files:
+                    st.info("No files found in DB")
+                else:
+                    st.dataframe(files, use_container_width=True)
+            except Exception as e:
+                st.error(str(e))
+
+    q = st.text_input("Query")
+    k = st.number_input("Top K", min_value=1, max_value=20, value=5, step=1)
+    if st.button("Search"):
+        try:
+            r = requests.post(f"{rag_base}/vdb/search", json={"q": q, "k": int(k)}, timeout=60)
+            res = r.json().get("results", [])
+            for hit in res:
+                meta = hit.get("meta", {})
+                text = hit.get("text", "")
+                score = hit.get("score", None)
+                with st.expander(
+                    f"{meta.get('filename','')}  id={meta.get('file_id')}  "
+                    f"score={round(score,4) if isinstance(score,(int,float)) else score}"
+                ):
+                    st.write(text)
+                    fid = meta.get("file_id")
+                    if fid:
+                        if str(meta.get("filename","")).lower().endswith(".pdf"):
+                            components.html(
+                                f'<iframe src="{rag_base}/files/{fid}/inline" '
+                                'width="100%" height="600px"></iframe>',
+                                height=620
+                            )
+                        else:
+                            try:
+                                g = requests.get(f"{rag_base}/files/{fid}/inline", timeout=30)
+                                from io import BytesIO
+                                b = BytesIO(g.content)
+                                doc = Document(b)
+                                t = "\n".join([p.text for p in doc.paragraphs])
+                                st.text_area("Preview", value=t, height=300)
+                            except Exception as e:
+                                st.warning(str(e))
+        except Exception as e:
+            st.error(str(e))
+
+
+with tabs[6]:
     st.subheader("Chat")
     c1, c2, c3 = st.columns([2,2,1])
     with c1:
