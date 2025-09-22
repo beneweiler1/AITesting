@@ -1,28 +1,17 @@
 services:
   db:
-    image: mysql:8.0
+    image: mysql:8
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: appdb
       MYSQL_USER: appuser
       MYSQL_PASSWORD: apppassword
-    ports:
-      - "3306:3306"
+      MYSQL_ROOT_PASSWORD: rootpassword
     volumes:
-      - db_data:/var/lib/mysql
-
-  ollama:
-    image: ollama/ollama:0.3.14
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    restart: unless-stopped
+      - mysql_data:/var/lib/mysql
 
   rag:
     build:
       context: ./rag
-      dockerfile: Dockerfile
     environment:
       DB_HOST: db
       DB_PORT: "3306"
@@ -32,18 +21,19 @@ services:
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_LLM_MODEL: mistral
       OLLAMA_EMBED_MODEL: mxbai-embed-large
+    volumes:
+      - ./rag:/app
+      - rag_data:/chroma
     ports:
       - "8001:8001"
     depends_on:
       - db
       - ollama
-    volumes:
-      - rag_data:/chroma
+
 
   app:
     build:
       context: ./streamlit
-      dockerfile: Dockerfile
     environment:
       DB_HOST: db
       DB_PORT: "3306"
@@ -51,15 +41,24 @@ services:
       DB_USER: appuser
       DB_PASSWORD: apppassword
       RAG_BASE_URL: http://rag:8001
-    ports:
-      - "8501:8501"
     volumes:
       - ./streamlit:/app
+      - ./streamlit/.streamlit:/root/.streamlit
+    command: streamlit run app.py --server.port 8501 --server.address 0.0.0.0
+    ports:
+      - "8501:8501"
     depends_on:
-      - db
       - rag
+      - db
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
 
 volumes:
-  db_data:
-  ollama_data:
+  mysql_data:
   rag_data:
+  ollama_data:

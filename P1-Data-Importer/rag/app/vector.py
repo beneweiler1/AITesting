@@ -1,11 +1,21 @@
-import chromadb
-from chromadb.config import Settings
-from .config import CHROMA_DIR, COLLECTION_NAME
+from chromadb import Client, Settings
 
-client = chromadb.PersistentClient(path=CHROMA_DIR, settings=Settings(anonymized_telemetry=False))
-collection = client.get_or_create_collection(name=COLLECTION_NAME, metadata={"hnsw:space": "cosine"})
+_CLIENT = None
+_COLL_NAME = "files"
+
+def _client():
+    global _CLIENT
+    if _CLIENT is None:
+        _CLIENT = Client(Settings(persist_directory="/chroma"))
+    return _CLIENT
+
+def get_collection():
+    return _client().get_or_create_collection(_COLL_NAME, metadata={"hnsw:space": "cosine"})
 
 def reset_collection():
-    client.delete_collection(name=COLLECTION_NAME)
-    global collection
-    collection = client.get_or_create_collection(name=COLLECTION_NAME, metadata={"hnsw:space": "cosine"})
+    c = _client()
+    try:
+        c.delete_collection(_COLL_NAME)
+    except Exception:
+        pass
+    return c.get_or_create_collection(_COLL_NAME, metadata={"hnsw:space": "cosine"})

@@ -1,9 +1,26 @@
+# Core app frameworks
+streamlit==1.38.0
 fastapi==0.115.0
 uvicorn==0.30.6
+
+# Database + ORM
 SQLAlchemy==2.0.32
 pymysql==1.1.1
+cryptography==43.0.1   # Needed for caching_sha2_password auth in MySQL 8+
+
+# Vector DB + embeddings
 chromadb==0.5.5
+
+# File parsing
 pypdf==4.3.1
 python-docx==1.1.2
 pandas==2.2.2
+
+# Networking
 requests==2.32.3
+
+# Optional (for debugging/logging and clean console output)
+python-dotenv==1.0.1
+
+openpyxl==3.1.5
+xlrd==2.0.1
