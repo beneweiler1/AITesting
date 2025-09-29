@@ -1,3 +1,4 @@
+import json
 import requests
 from fastapi import HTTPException
 from ..config import OLLAMA_BASE
@@ -8,7 +9,27 @@ def pull(model: str):
         raise HTTPException(status_code=500, detail=r.text)
 
 def try_generate(model: str, prompt: str):
-    return requests.post(f"{OLLAMA_BASE}/api/generate", json={"model": model, "prompt": prompt, "stream": False}, timeout=180)
+    response = requests.post(
+        f"{OLLAMA_BASE}/api/generate",
+        json={"model": model, "prompt": prompt, "stream": True},
+        timeout=300,
+        stream=True
+    )
+    
+    # Collect streamed response
+    full_response = ""
+    for line in response.iter_lines():
+        if line:
+            chunk = json.loads(line)
+            if "response" in chunk:
+                full_response += chunk["response"]
+            if chunk.get("done"):
+                break
+    
+    return type('obj', (object,), {
+        'status_code': response.status_code,
+        'json': lambda: {"response": full_response}
+    })
 
 def try_chat(model: str, prompt: str):
     return requests.post(f"{OLLAMA_BASE}/api/chat", json={"model": model, "messages":[{"role":"user","content": prompt}]}, timeout=180)

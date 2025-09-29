@@ -27,8 +27,16 @@ def render_tab_chat(rag_base_default):
         else:
             try:
                 t0 = time.time()
-                r = requests.post(f"{st.session_state.chat_base}/chat", json={"message": msg, "model": st.session_state.chat_model}, timeout=180)
+                # Explicitly disable RAG and SQL search for simple chat
+                payload = {
+                    "message": msg,
+                    "model": st.session_state.chat_model,
+                    "use_rag": False,
+                    "use_sql": False
+                }
+                r = requests.post(f"{st.session_state.chat_base}/chat", json=payload, timeout=180)
                 dt = (time.time() - t0) * 1000.0
+                
                 if r.status_code >= 400:
                     st.error(f"Error {r.status_code}")
                     try:
@@ -39,12 +47,13 @@ def render_tab_chat(rag_base_default):
                     data = r.json()
                     st.markdown("### Answer")
                     st.write(data.get("answer", ""))
+                    
                 if dbg:
                     with st.expander("Details"):
                         st.write({"status_code": r.status_code, "latency_ms": round(dt, 1)})
                         try:
                             st.markdown("**Request Body**")
-                            st.code({"message": msg, "model": st.session_state.chat_model})
+                            st.code(payload)
                             st.markdown("**Raw Response**")
                             st.code(r.text)
                         except Exception:

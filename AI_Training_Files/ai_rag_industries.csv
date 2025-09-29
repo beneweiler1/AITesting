@@ -1,0 +1,8 @@
+Industry,AI_Applications,RAG_Applications
+Healthcare,"Medical imaging, patient risk prediction, personalized treatment","Clinical decision support, summarizing research papers, retrieving patient history"
+Finance,"Fraud detection, algorithmic trading, credit scoring","Retrieving compliance documents, summarizing financial reports, answering client queries"
+Retail,"Recommendation engines, demand forecasting, customer sentiment analysis","Product information retrieval, customer support Q&A, summarizing reviews"
+Legal,"Contract analysis, case outcome prediction, e-discovery","Retrieving case law, summarizing legal documents, assisting lawyers with precedent search"
+Education,"Personalized learning, automated grading, virtual tutoring","Retrieving academic resources, summarizing textbooks, providing contextual answers"
+Manufacturing,"Predictive maintenance, quality control, supply chain optimization","Technical manual retrieval, troubleshooting assistance, knowledge base queries"
+Real Estate,"Price prediction, property recommendation, market analysis","Retrieving property details, summarizing market trends, client Q&A"
