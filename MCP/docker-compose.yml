@@ -1,0 +1,21 @@
+version: "3.9"
+services:
+  api:
+    build: ./fastapi
+    container_name: mcp_rag_api
+    env_file: .env
+    environment:
+      - RAG_TOP_K=${RAG_TOP_K}
+    ports:
+      - "8000:8000"
+  ui:
+    build: ./flask_ui
+    container_name: mcp_rag_ui
+    env_file: .env
+    environment:
+      - API_BASE=http://api:8000
+      - FLASK_PORT=${FLASK_PORT}
+    ports:
+      - "5050:5050"
+    depends_on:
+      - api
